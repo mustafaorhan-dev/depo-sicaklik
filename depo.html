@@ -207,7 +207,8 @@
     var seciliDepo = '';
     var sayfa = 0;
     var sayfaBoyutu = 10;
-    var gasUrl = getUrlParam('gas') || '';
+    var DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbynBf7pBHQrZ0Vh3lSyTyceozIBXF_uZP2ZIkkd76C7SkSqKoRRJANC68LGCqTAXYHCCg/exec';
+    var gasUrl = getUrlParam('gas') || DEFAULT_GAS_URL;
 
     function loadData() {
       try { var s = localStorage.getItem(STORAGE_KEY); haccpRecords = s ? JSON.parse(s) : []; } catch (e) { haccpRecords = []; }
@@ -335,19 +336,7 @@
       var depo = document.getElementById('depoFilter').value;
       if (!depo) { gosterToast('L\u00fctfen bir depo se\u00e7in.'); return; }
 
-      var records = haccpRecords.filter(function(r) {
-        return r.type === 'sicaklik' && (r.depoAd || '') === depo;
-      }).sort(function(a, b) {
-        if (a.tarih !== b.tarih) return a.tarih > b.tarih ? -1 : 1;
-        return (a.saat || '') > (b.saat || '') ? -1 : 1;
-      });
-
-      var text = depo;
-      if (records.length > 0) {
-        text += ' | ' + records.map(function(r) {
-          return formatTarihTR(r.tarih) + ' ' + (r.saat || '--:--') + ' ' + r.sicaklik + 'C';
-        }).join(' | ');
-      }
+      var pageUrl = location.protocol + '//' + location.host + location.pathname + '?depo=' + encodeURIComponent(depo);
 
       var modal = document.getElementById('qrModal');
       var img = document.getElementById('qrImage');
@@ -356,16 +345,16 @@
       var sub = document.getElementById('qrModalSub');
 
       title.textContent = depo;
-      sub.textContent = records.length + ' kay\u0131t i\u00e7erir';
+      sub.textContent = 'Canl\u0131 veri QR kodu';
 
-      var url = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(text);
+      var url = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(pageUrl);
       img.src = url;
       img.style.display = 'block';
       img.onerror = function() {
         img.style.display = 'none';
-        fallback.textContent = text;
+        fallback.textContent = pageUrl;
       };
-      img.onload = function() { fallback.textContent = ''; };
+      img.onload = function() { fallback.textContent = pageUrl; };
 
       modal.classList.add('open');
     }
