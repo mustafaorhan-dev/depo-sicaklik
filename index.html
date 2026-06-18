@@ -258,8 +258,7 @@
     function showQrModal() {
       var modal = document.getElementById('qrModal');
       var qrDiv = document.getElementById('qrKod');
-      var url = location.href.split('?')[0];
-      if (seciliDepo) url += '?depo=' + encodeURIComponent(seciliDepo);
+      var url = 'https://mustafaorhan-dev.github.io/depo-sicaklik/';
       qrDiv.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '" alt="QR Kod" style="max-width:200px" />';
       modal.classList.add('show');
     }
