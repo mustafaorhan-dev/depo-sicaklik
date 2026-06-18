@@ -234,7 +234,11 @@
             sicaklik: r.sicaklik != null ? Number(r.sicaklik) : undefined,
             not: r.not_ || r.not || ''
           };});
-          if (data.depoAdlari && Array.isArray(data.depoAdlari) && data.depoAdlari.length > 0) allDepos = data.depoAdlari;
+          // Benzersiz depo adlarını kayıtlardan çıkar
+          var uniqueDepos = {};
+          haccpRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
+          var keys = Object.keys(uniqueDepos);
+          if (keys.length > 0) allDepos = keys.sort();
           gosterToast(haccpRecords.length + ' kay\u0131t y\u00fcklendi', 'success');
           return true;
         } else {
