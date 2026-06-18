@@ -2,198 +2,84 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>Soğuk Depo Sıcaklık Kayıtları</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --text2: #475569; --text3: #94a3b8;
-      --border: #e2e8f0; --accent: #6366f1; --green: #10b981; --red: #ef4444; --orange: #f59e0b;
-      --radius: 14px; --shadow: 0 4px 16px rgba(0,0,0,0.06);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0a0f1e; --card: #131d35; --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
-        --border: rgba(255,255,255,0.08); --shadow: 0 4px 20px rgba(0,0,0,0.4);
-      }
-    }
-    html { height: 100%; }
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100%;
-      padding: 0; margin: 0;
-    }
-    .container { max-width: 600px; margin: 0 auto; padding: 1rem; }
-    .header {
-      background: var(--card); border-bottom: 1px solid var(--border);
-      padding: 1rem 1.25rem; position: sticky; top: 0; z-index: 10;
-      backdrop-filter: blur(12px);
-    }
-    .header-inner { max-width: 600px; margin: 0 auto; display: flex; align-items: center; gap: 0.75rem; }
-    .header h1 { font-size: 1.1rem; font-weight: 700; flex: 1; }
-    .header .sub { font-size: 0.75rem; color: var(--text3); font-weight: 400; display: block; margin-top: 2px; }
-
-    .filter-bar {
-      display: flex; align-items: center; gap: 0.5rem;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 0.75rem 1rem;
-      margin-bottom: 1rem; box-shadow: var(--shadow);
-    }
-    .filter-bar label { font-size: 0.85rem; color: var(--text2); font-weight: 600; white-space: nowrap; }
-    .filter-bar select {
-      flex: 1; padding: 0.5rem 0.6rem; border: 1px solid var(--border);
-      border-radius: 8px; background: var(--bg); color: var(--text);
-      font-size: 0.85rem; font-family: inherit;
-    }
-    .btn-qr {
-      background: var(--accent); color: #fff; border: none;
-      border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer;
-      font-size: 0.85rem; font-weight: 600; font-family: inherit;
-      display: flex; align-items: center; gap: 0.4rem;
-      transition: opacity 0.2s; white-space: nowrap;
-    }
-    .btn-qr:active { opacity: 0.7; }
-
-    .table-wrapper {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
-    }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    .data-table th {
-      text-align: left; padding: 0.65rem 0.75rem;
-      color: var(--text3); font-weight: 600; font-size: 0.72rem;
-      text-transform: uppercase; letter-spacing: 0.5px;
-      background: rgba(0,0,0,0.02); border-bottom: 1px solid var(--border);
-    }
-    .data-table td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--text2); }
-    .data-table tr:last-child td { border-bottom: none; }
-
-    .badge {
-      display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px;
-      font-size: 0.72rem; font-weight: 700;
-    }
-    .badge-ok { background: rgba(16,185,129,0.12); color: var(--green); }
-    .badge-warn { background: rgba(245,158,11,0.12); color: var(--orange); }
-    .badge-err { background: rgba(239,68,68,0.12); color: var(--red); }
-
-    .empty-state {
-      text-align: center; padding: 2.5rem 1rem;
-      color: var(--text3); font-size: 0.9rem;
-    }
-    .empty-state p { margin-bottom: 0.25rem; }
-
-    .nav {
-      display: flex; align-items: center; justify-content: center;
-      gap: 0.5rem; padding: 0.75rem;
-      border-top: 1px solid var(--border);
-    }
-    .nav button {
-      background: none; border: 1px solid var(--border);
-      border-radius: 8px; padding: 0.4rem 0.75rem; cursor: pointer;
-      color: var(--text2); font-size: 0.85rem; font-family: inherit;
-      transition: all 0.2s;
-    }
-    .nav button:disabled { opacity: 0.3; cursor: default; }
-    .nav button:not(:disabled):active { background: rgba(99,102,241,0.08); }
-    .nav .page-info { font-size: 0.8rem; color: var(--text3); }
-
-    .toast {
-      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 0.75rem 1.25rem;
-      font-size: 0.85rem; font-weight: 500; color: var(--text);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-      z-index: 100; display: none; white-space: nowrap;
-    }
-    .toast.show { display: block; }
-
-    @media (max-width: 400px) {
-      .container { padding: 0.75rem; }
-      .filter-bar { flex-wrap: wrap; }
-      .filter-bar select { min-width: 100px; }
-      .data-table { font-size: 0.78rem; }
-      .data-table th, .data-table td { padding: 0.5rem 0.5rem; }
-    }
-
-    /* QR Modal */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      z-index: 200; display: none; align-items: center; justify-content: center;
-      padding: 1rem;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal-box {
-      background: var(--card); border-radius: var(--radius);
-      padding: 1.5rem; max-width: 360px; width: 100%;
-      text-align: center; box-shadow: 0 16px 48px rgba(0,0,0,0.2);
-    }
-    .modal-box h3 { font-size: 1rem; margin-bottom: 0.25rem; }
-    .modal-box p { font-size: 0.8rem; color: var(--text3); margin-bottom: 1rem; }
-    .modal-box img { max-width: 100%; height: auto; border-radius: 8px; }
-    .modal-box .btn-close {
-      margin-top: 1rem; background: none; border: 1px solid var(--border);
-      border-radius: 8px; padding: 0.5rem 1.5rem; cursor: pointer;
-      color: var(--text2); font-size: 0.85rem; font-family: inherit;
-    }
-    .modal-box .btn-close:active { background: rgba(99,102,241,0.08); }
-    @media print {
-      .header, .filter-bar, .nav, .btn-qr, .toast, .modal-overlay { display: none !important; }
-      .container { padding: 0; max-width: 100%; }
-      .table-wrapper { box-shadow: none; border: 1px solid #ccc; }
-      .data-table th { background: #f5f5f5; }
-      body { background: #fff; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #222; line-height: 1.5; padding: 16px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 20px; text-align: center; margin-bottom: 12px; color: #1a3c5e; }
+    .subtitle { text-align: center; font-size: 13px; color: #666; margin-bottom: 16px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+    .toolbar label { font-weight: 600; font-size: 14px; min-width: 90px; }
+    .toolbar select { flex: 1; min-width: 150px; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background .15s; }
+    .btn-primary { background: #1a73e8; color: #fff; }
+    .btn-primary:hover { background: #155ab6; }
+    .btn-secondary { background: #6c757d; color: #fff; }
+    .btn-secondary:hover { background: #545b62; }
+    .btn-outline { background: transparent; border: 1px solid #1a73e8; color: #1a73e8; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #e9ecef; font-size: 14px; }
+    th { background: #1a3c5e; color: #fff; font-weight: 600; white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f1f5ff; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 16px; }
+    .pagination button { padding: 6px 16px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; }
+    .pagination button:disabled { opacity: .4; cursor: default; }
+    .pagination span { font-size: 14px; color: #555; }
+    .badge-ok { background: #d4edda; color: #155724; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .badge-warn { background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .badge-err { background: #f8d7da; color: #721c24; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .empty { text-align: center; padding: 32px 16px; color: #888; font-style: italic; }
+    .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 500; z-index: 1000; opacity: 0; transition: opacity .3s; max-width: 90%; text-align: center; }
+    .toast.show { opacity: 1; }
+    .toast.info { background: #1a73e8; }
+    .toast.success { background: #28a745; }
+    .toast.error { background: #dc3545; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 999; align-items: center; justify-content: center; padding: 16px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #fff; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,.2); }
+    .modal h2 { margin-bottom: 12px; font-size: 18px; }
+    .modal p { font-size: 14px; color: #555; margin-bottom: 16px; }
+    .modal img { max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 16px; }
+    .modal .btn { width: 100%; justify-content: center; }
+    .loading { text-align: center; padding: 24px; color: #666; font-size: 14px; }
+    @media (max-width: 600px) {
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .toolbar label { min-width: auto; }
+      th, td { font-size: 13px; padding: 8px 6px; }
+      h1 { font-size: 17px; }
     }
   </style>
 </head>
 <body>
-
-  <div class="header">
-    <div class="header-inner">
-      <h1>So\u011fuk Depo S\u0131cakl\u0131k Kay\u0131tlar\u0131 <span class="sub" id="pageSub">QR Kod ile H\u0131zl\u0131 G\u00f6r\u00fcnt\u00fcleme</span></h1>
-    </div>
-  </div>
-
   <div class="container">
+    <h1>Soğuk Depo Sıcaklık Kayıtları</h1>
+    <p class="subtitle">QR Kod ile Hızlı Görüntüleme</p>
 
-    <div class="filter-bar">
-      <label>Depo Filtresi:</label>
+    <div class="toolbar">
+      <label for="depoFilter">Depo Filtresi:</label>
       <select id="depoFilter" onchange="depoDegisti()"></select>
-      <button class="btn-qr" onclick="qrOlustur()">QR</button>
-      <button class="btn-qr" onclick="window.print()" style="background:var(--green)">PDF</button>
+      <button class="btn btn-primary" onclick="showQrModal()">QR</button>
+      <button class="btn btn-secondary" onclick="pdfYap()">PDF</button>
     </div>
 
-    <div class="table-wrapper">
-      <div class="empty-state" id="emptyState">
-        <p>Bu depoya ait kay\u0131t bulunamad\u0131.</p>
-      </div>
-      <table class="data-table" id="dataTable" style="display:none">
-        <thead>
-          <tr><th>Tarih</th><th>Saat</th><th>S\u0131cakl\u0131k</th><th>Durum</th></tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-      <div class="nav" id="tableNav" style="display:none">
-        <button onclick="oncekiSayfa()" id="prevBtn">\u2039 \u00d6nceki</button>
-        <span class="page-info" id="pageInfo"></span>
-        <button onclick="sonrakiSayfa()" id="nextBtn">Sonraki \u203a</button>
-      </div>
+    <div id="tabloAlani">
+      <div class="loading" id="yukleniyor">Veriler yükleniyor...</div>
     </div>
-
   </div>
 
-  <div class="toast" id="toast"></div>
+  <!-- Toast -->
+  <div id="toast" class="toast">&nbsp;</div>
 
   <!-- QR Modal -->
-  <div class="modal-overlay" id="qrModal">
-    <div class="modal-box">
-      <h3 id="qrModalTitle">QR Kod</h3>
-      <p id="qrModalSub">Depo s\u0131cakl\u0131k kay\u0131tlar\u0131n\u0131 i\u00e7erir</p>
-      <img id="qrImage" style="display:none" alt="QR Kod" />
-      <p id="qrFallback" style="font-size:0.8rem;color:var(--text3);word-break:break-all"></p>
-      <button class="btn-close" onclick="qrKapat()">Kapat</button>
+  <div id="qrModal" class="modal-overlay" onclick="if(event.target===this)closeQrModal()">
+    <div class="modal">
+      <h2>QR Kod</h2>
+      <p>Depo sıcaklık kayıtlarını içerir</p>
+      <div id="qrKod"></div>
+      <button class="btn btn-primary" onclick="closeQrModal()">Kapat</button>
     </div>
   </div>
 
@@ -210,6 +96,19 @@
     var DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbylzefR5koFpGIsFZJBDdA_17pEgH1YNz-cT0G0IM9v4f21OX1lELU8PT9PMjWhB81sXA/exec';
     var gasUrl = getUrlParam('gas') || DEFAULT_GAS_URL;
 
+    function getUrlParam(name) {
+      var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+
+    function gosterToast(msg, tip) {
+      var el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast ' + (tip || 'info') + ' show';
+      clearTimeout(el._t);
+      el._t = setTimeout(function() { el.className = 'toast'; }, 4000);
+    }
+
     function loadData() {
       try { var s = localStorage.getItem(STORAGE_KEY); haccpRecords = s ? JSON.parse(s) : []; } catch (e) { haccpRecords = []; }
       try { var d = localStorage.getItem(DEPO_KEY); allDepos = d ? JSON.parse(d) : [...DEFAULT_DEPOLAR]; } catch (e) { allDepos = [...DEFAULT_DEPOLAR]; }
@@ -219,7 +118,7 @@
     async function gasVeriCek() {
       if (!gasUrl) { gosterToast('GAS URL eksik!', 'error'); return false; }
       try {
-        gosterToast('Veriler y\u00fckleniyor... (' + gasUrl.substring(0,50) + '...)');
+        gosterToast('Veriler y\u00fckleniyor...');
         var res = await fetch(gasUrl + '?sheet=G%C4%B1da%20G%C3%BCvenli%C4%9Fi');
         if (!res.ok) { gosterToast('Sunucu hatas\u0131: ' + res.status, 'error'); return false; }
         var data = await res.json();
@@ -257,6 +156,21 @@
       return m ? m[3] + '.' + m[2] + '.' + m[1] : t;
     }
 
+    function normalizeDate(v) {
+      if (!v) return '';
+      if (typeof v === 'number') return new Date(v).toISOString().slice(0,10);
+      if (typeof v === 'string' && v.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+        var p = v.split('.');
+        return p[2] + '-' + p[1] + '-' + p[0];
+      }
+      return String(v).slice(0,10);
+    }
+
+    function normalizeSaat(v) {
+      if (!v) return '';
+      return String(v).slice(0,5);
+    }
+
     function sicaklikDurum(sicaklik, depoAd) {
       var v = parseFloat(sicaklik);
       if (isNaN(v)) return { text: '\u2014', cls: '' };
@@ -282,176 +196,102 @@
       if (!s) return;
       var cur = s.value;
       s.innerHTML = '<option value="">T\u00fcm\u00fc</option>' + allDepos.map(function(d) {
-        var sel = d === cur ? ' selected' : '';
-        return '<option value="' + d.replace(/"/g,'&quot;') + '"' + sel + '>' + d + '</option>';
+        return '<option value="' + d.replace(/"/g, '&quot;') + '">' + d + '</option>';
       }).join('');
-    }
-
-    function getFiltrelenmis() {
-      var r = haccpRecords.filter(function(x) { return x.type === 'sicaklik'; });
-      if (seciliDepo) r = r.filter(function(x) { return (x.depoAd || '') === seciliDepo; });
-      r.sort(function(a, b) {
-        if (a.tarih !== b.tarih) return a.tarih > b.tarih ? -1 : 1;
-        return (a.saat || '') > (b.saat || '') ? -1 : 1;
-      });
-      return r;
+      if (cur) s.value = cur;
     }
 
     function renderTablosu() {
-      var records = getFiltrelenmis();
-      var table = document.getElementById('dataTable');
-      var empty = document.getElementById('emptyState');
-      var nav = document.getElementById('tableNav');
-      var tbody = document.getElementById('tableBody');
+      var alan = document.getElementById('tabloAlani');
+      var filtrelenmis = seciliDepo ? haccpRecords.filter(function(r) { return r.depoAd === seciliDepo; }) : haccpRecords;
+      filtrelenmis.sort(function(a, b) {
+        var ta = (a.tarih || '').replace(/-/g, '') + (a.saat || '').replace(/:/g, '');
+        var tb = (b.tarih || '').replace(/-/g, '') + (b.saat || '').replace(/:/g, '');
+        return tb.localeCompare(ta);
+      });
+      var toplam = filtrelenmis.length;
+      var bas = sayfa * sayfaBoyutu;
+      var bit = Math.min(bas + sayfaBoyutu, toplam);
+      var sayfaGorunen = filtrelenmis.slice(bas, bit);
 
-      if (records.length === 0) {
-        table.style.display = 'none';
-        empty.style.display = 'block';
-        if (nav) nav.style.display = 'none';
+      if (toplam === 0) {
+        alan.innerHTML = '<div class="empty">Bu depoya ait kay\u0131t bulunamad\u0131.</div>';
         return;
       }
-      table.style.display = 'table';
-      empty.style.display = 'none';
-
-      var totalPages = Math.ceil(records.length / sayfaBoyutu);
-      if (sayfa >= totalPages) sayfa = 0;
-      if (sayfa < 0) sayfa = totalPages - 1;
-      var start = sayfa * sayfaBoyutu;
-      var pageRecords = records.slice(start, start + sayfaBoyutu);
-
-      tbody.innerHTML = pageRecords.map(function(r) {
-        var depoAd = r.depoAd || '';
-        var durum = sicaklikDurum(r.sicaklik, depoAd);
-        return '<tr>' +
-          '<td>' + formatTarihTR(r.tarih) + '</td>' +
-          '<td>' + (r.saat || '\u2014') + '</td>' +
-          '<td style="font-weight:700">' + r.sicaklik + '</td>' +
-          '<td><span class="badge ' + durum.cls + '">' + durum.text + '</span></td>' +
-        '</tr>';
-      }).join('');
-
-      if (nav) {
-        nav.style.display = totalPages > 1 ? 'flex' : 'none';
-        document.getElementById('pageInfo').textContent = 'Sayfa ' + (sayfa + 1) + ' / ' + totalPages + ' (' + records.length + ' kay\u0131t)';
-        document.getElementById('prevBtn').disabled = sayfa === 0;
-        document.getElementById('nextBtn').disabled = sayfa >= totalPages - 1;
-      }
+      var html = '<table><thead><tr><th>Tarih</th><th>Saat</th><th>Depo Ad\u0131</th><th>S\u0131cakl\u0131k (&deg;C)</th><th>Not</th></tr></thead><tbody>';
+      sayfaGorunen.forEach(function(r) {
+        var durum = sicaklikDurum(r.sicaklik, r.depoAd);
+        var not = r.not || '\u2014';
+        if (not.length > 50) not = not.slice(0, 50) + '...';
+        html += '<tr><td>' + formatTarihTR(r.tarih) + '</td><td>' + (r.saat || '\u2014') + '</td><td>' + (r.depoAd || '\u2014') + '</td><td>' + (r.sicaklik != null ? r.sicaklik.toFixed(1) : '\u2014') + ' <span class="' + durum.cls + '">' + durum.text + '</span></td><td>' + not + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      html += '<div class="pagination">';
+      html += '<button onclick="sayfa--;renderTablosu()"' + (sayfa <= 0 ? ' disabled' : '') + '>\u2039 \u00d6nceki</button>';
+      html += '<span>' + (bas + 1) + '-' + bit + ' / ' + toplam + '</span>';
+      html += '<button onclick="sayfa++;renderTablosu()"' + (bit >= toplam ? ' disabled' : '') + '>Sonraki \u203a</button>';
+      html += '</div>';
+      alan.innerHTML = html;
     }
 
-    function oncekiSayfa() { if (sayfa > 0) { sayfa--; renderTablosu(); } }
-    function sonrakiSayfa() {
-      var records = getFiltrelenmis();
-      var totalPages = Math.ceil(records.length / sayfaBoyutu);
-      if (sayfa < totalPages - 1) { sayfa++; renderTablosu(); }
-    }
-
-    function qrOlustur() {
-      var depo = document.getElementById('depoFilter').value;
-      if (!depo) { gosterToast('L\u00fctfen bir depo se\u00e7in.'); return; }
-
-      var pageUrl = location.protocol + '//' + location.host + location.pathname + '?depo=' + encodeURIComponent(depo);
-
-      var modal = document.getElementById('qrModal');
-      var img = document.getElementById('qrImage');
-      var fallback = document.getElementById('qrFallback');
-      var title = document.getElementById('qrModalTitle');
-      var sub = document.getElementById('qrModalSub');
-
-      title.textContent = depo;
-      sub.textContent = 'Canl\u0131 veri QR kodu';
-
-      var url = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(pageUrl);
-      img.src = url;
-      img.style.display = 'block';
-      img.onerror = function() {
-        img.style.display = 'none';
-        fallback.textContent = pageUrl;
-      };
-      img.onload = function() { fallback.textContent = pageUrl; };
-
-      modal.classList.add('open');
-    }
-
-    function qrKapat() {
-      document.getElementById('qrModal').classList.remove('open');
-    }
-    document.getElementById('qrModal').addEventListener('click', function(e) {
-      if (e.target === this) qrKapat();
-    });
-
-    function gosterToast(msg) {
-      var el = document.getElementById('toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      clearTimeout(el._timer);
-      el._timer = setTimeout(function() { el.classList.remove('show'); }, 2500);
-    }
-
-    function getUrlParam(name) {
-      var match = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
-      return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : null;
-    }
-
-    function normalizeDate(v) {
-      if (!v) return '';
-      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
-      if (/^\d+(\.\d+)?$/.test(String(v))) { var d = new Date(1899, 11, 30 + Number(v)); if (!isNaN(d)) return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
-      var d = new Date(v);
-      if (!isNaN(d)) return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-      return '';
-    }
-    function normalizeSaat(v) {
-      if (!v) return '';
-      if (/^\d{2}:\d{2}$/.test(v)) return v;
-      var d = new Date(v);
-      if (!isNaN(d)) return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-      return v;
-    }
-
-    (async function() {
+    async function init() {
       loadData();
-
+      var gasOk = await gasVeriCek();
+      if (!gasOk && haccpRecords.length > 0) {
+        gosterToast(haccpRecords.length + ' kay\u0131t (LocalStorage)', 'info');
+      }
+      // URL'den ?depo=X parametresini oku
       var directDepo = getUrlParam('depo');
-      var dataStr = getUrlParam('v');
-      var liveOk = false;
-
-      // Önce canlı veri dene (GAS)
-      if (!dataStr && gasUrl) {
-        gosterToast('Veriler y\u00fckleniyor...');
-        liveOk = await gasVeriCek();
-      }
-
-      // Canlı gelmezse localStorage veya QR verisi dene
-      if (!liveOk) {
-        if (dataStr) {
-          var items = dataStr.split(',').filter(Boolean);
-          items.forEach(function(item) {
-            var parts = item.split('|');
-            if (parts.length >= 3) {
-              haccpRecords.push({ id: Date.now() + Math.random(), type: 'sicaklik', tarih: parts[0], saat: parts[1], depoAd: directDepo, sicaklik: parseFloat(parts[2]), not: '' });
-            }
-          });
-          if (haccpRecords.length > 0 && directDepo && allDepos.indexOf(directDepo) < 0) allDepos.push(directDepo);
-        }
-      }
-
-      var subEl = document.getElementById('pageSub');
-      if (liveOk) {
-        subEl.textContent = 'Canl\u0131 veri (' + haccpRecords.length + ' kay\u0131t)';
-      } else if (dataStr) {
-        subEl.textContent = (directDepo || 'Depo') + ' - QR verisi';
-      }
-
-      depoListesiDoldur();
-
       if (directDepo) {
+        if (allDepos.indexOf(directDepo) < 0) {
+          allDepos.push(directDepo);
+          allDepos.sort();
+        }
         document.getElementById('depoFilter').value = directDepo;
         seciliDepo = directDepo;
       }
-
+      depoListesiDoldur();
+      sayfa = 0;
       renderTablosu();
-    })();
-  </script>
+    }
 
+    function showQrModal() {
+      var modal = document.getElementById('qrModal');
+      var qrDiv = document.getElementById('qrKod');
+      var url = location.href.split('?')[0];
+      if (seciliDepo) url += '?depo=' + encodeURIComponent(seciliDepo);
+      qrDiv.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '" alt="QR Kod" style="max-width:200px" />';
+      modal.classList.add('show');
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.remove('show');
+    }
+
+    function pdfYap() {
+      var filtrelenmis = seciliDepo ? haccpRecords.filter(function(r) { return r.depoAd === seciliDepo; }) : haccpRecords;
+      filtrelenmis.sort(function(a, b) {
+        var ta = (a.tarih || '').replace(/-/g, '') + (a.saat || '').replace(/:/g, '');
+        var tb = (b.tarih || '').replace(/-/g, '') + (b.saat || '').replace(/:/g, '');
+        return tb.localeCompare(ta);
+      });
+      var rows = [['Tarih', 'Saat', 'Depo Ad\u0131', 'S\u0131cakl\u0131k', 'Not']];
+      filtrelenmis.forEach(function(r) {
+        rows.push([formatTarihTR(r.tarih), r.saat || '', r.depoAd || '', r.sicaklik != null ? String(r.sicaklik) : '', r.not || '']);
+      });
+      var csv = rows.map(function(row) {
+        return row.map(function(cell) { return '"' + String(cell).replace(/"/g, '""') + '"'; }).join(',');
+      }).join('\n');
+      var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'sicaklik_kayitlari.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      gosterToast('CSV indiriliyor...', 'success');
+    }
+
+    init();
+  </script>
 </body>
 </html>
