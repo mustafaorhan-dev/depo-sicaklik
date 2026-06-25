@@ -270,7 +270,11 @@
         var durum = sicaklikDurum(r.sicaklik, r.depoAd);
         var not = r.not || '\u2014';
         if (not.length > 50) not = not.slice(0, 50) + '...';
+<<<<<<< HEAD
         html += '<tr><td data-label="Tarih">' + formatTarihTR(r.tarih) + '</td><td data-label="Saat">' + (r.saat || '\u2014') + '</td><td data-label="Depo">' + (r.depoAd || '\u2014') + '</td><td data-label="S\u0131cakl\u0131k">' + (r.sicaklik != null ? r.sicaklik.toFixed(1) : '\u2014') + ' <span class="' + durum.cls + '">' + durum.text + '</span></td><td data-label="Nem">' + (r.nem != null ? r.nem.toFixed(0) : '\u2014') + '</td><td data-label="Not">' + not + '</td></tr>';
+=======
+        html += '<tr><td>' + formatTarihTR(r.tarih) + '</td><td>' + (r.saat || '\u2014') + '</td><td>' + (r.depoAd || '\u2014') + '</td><td>' + (r.sicaklik != null ? r.sicaklik.toFixed(1) : '\u2014') + ' <span class="' + durum.cls + '">' + durum.text + '</span></td><td>' + (r.nem != null ? r.nem.toFixed(0) : '\u2014') + '</td><td>' + not + '</td></tr>';
+>>>>>>> 3b478431b16ac74d282d7a46e74e6f79c0b722ac
       });
       html += '</tbody></table>';
       html += '<div class="pagination">';
