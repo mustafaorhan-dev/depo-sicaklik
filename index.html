@@ -283,12 +283,6 @@
 
     async function init() {
       loadData();
-      // Varsay\u0131lan: bug\u00fcn\u00fcn tarihini g\u00f6ster (QR okutunca bug\u00fcn\u00fc g\u00f6rs\u00fcn)
-      var today = new Date().toISOString().slice(0, 10);
-      document.getElementById('basTarih').value = today;
-      document.getElementById('bitTarih').value = today;
-      baslangicTarih = today;
-      bitisTarih = today;
       // URL'den ?depo=X parametresini oku
       var directDepo = getUrlParam('depo');
       if (directDepo) {
