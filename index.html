@@ -44,27 +44,12 @@
     .modal p { font-size: 14px; color: #555; margin-bottom: 16px; }
     .modal img { max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 16px; }
     .modal .btn { width: 100%; justify-content: center; }
-    .date-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-    .date-group label { font-weight: 600; font-size: 13px; min-width: auto; }
-    .date-group input[type=date] { padding: 7px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; font-family: inherit; }
-    .btn-today { background: #e8f0fe; color: #1a73e8; border: 1px solid #1a73e8; }
-    .btn-today:hover { background: #d2e3fc; }
     .loading { text-align: center; padding: 24px; color: #666; font-size: 14px; }
     @media (max-width: 600px) {
       .toolbar { flex-direction: column; align-items: stretch; }
       .toolbar label { min-width: auto; }
-      .date-group { flex-wrap: nowrap; }
-      .date-group input[type=date] { flex: 1; min-width: 0; }
       th, td { font-size: 13px; padding: 8px 6px; }
       h1 { font-size: 17px; }
-      /* Mobil kart görünümü */
-      table, thead, tbody, th, td, tr { display: block; }
-      thead { display: none; }
-      tr { margin-bottom: 12px; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-      td { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border: none; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
-      td:last-child { border-bottom: none; }
-      td::before { content: attr(data-label); font-weight: 600; color: #555; font-size: 12px; margin-right: 8px; white-space: nowrap; }
-      td .badge-ok, td .badge-warn, td .badge-err { flex-shrink: 0; }
     }
   </style>
 </head>
@@ -74,17 +59,9 @@
     <p class="subtitle">QR Kod ile Hızlı Görüntüleme</p>
 
     <div class="toolbar">
-      <label for="depoFilter">Depo:</label>
+      <label for="depoFilter">Depo Filtresi:</label>
       <select id="depoFilter" onchange="depoDegisti()"></select>
-      <div class="date-group">
-        <label for="basTarih">Tarih:</label>
-        <input type="date" id="basTarih" onchange="tarihFilterDegisti()">
-        <span style="font-size:13px;color:#888;">–</span>
-        <input type="date" id="bitTarih" onchange="tarihFilterDegisti()">
-      </div>
-      <button class="btn btn-today" onclick="bugunuGoster()">Bugün</button>
       <button class="btn btn-primary" onclick="showQrModal()">QR</button>
-      <button class="btn btn-outline" onclick="showAyarlarModal()">Ayarlar</button>
       <button class="btn btn-secondary" onclick="pdfYap()">PDF</button>
     </div>
 
@@ -106,22 +83,6 @@
     </div>
   </div>
 
-  <!-- Ayarlar Modal -->
-  <div id="ayarlarModal" class="modal-overlay" onclick="if(event.target===this)kapatAyarlarModal()">
-    <div class="modal" style="text-align:left;max-width:500px">
-      <h2 style="text-align:center">Ayarlar</h2>
-      <p style="font-size:13px;color:#555;margin-bottom:16px">GAS Web App URL'sini girin veya <strong>örnek veri</strong> yükleyin.</p>
-      <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">GAS URL:</label>
-      <input type="url" id="gasUrlInput" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;font-family:inherit;margin-bottom:12px" placeholder="https://script.google.com/..." />
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <button class="btn btn-primary" onclick="ayarlarKaydet()">Kaydet</button>
-        <button class="btn btn-outline" onclick="ornekVeriYukle()">Örnek Veri Yükle</button>
-        <button class="btn btn-secondary" onclick="kapatAyarlarModal()">Kapat</button>
-      </div>
-      <p id="ayarlarDurum" style="font-size:12px;color:#888;text-align:center"></p>
-    </div>
-  </div>
-
   <script>
     var STORAGE_KEY = 'haccp_records';
     var DEPO_KEY = 'haccp_depo_adlari';
@@ -134,8 +95,6 @@
     var sayfaBoyutu = 10;
     var DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbylzefR5koFpGIsFZJBDdA_17pEgH1YNz-cT0G0IM9v4f21OX1lELU8PT9PMjWhB81sXA/exec';
     var gasUrl = getUrlParam('gas') || DEFAULT_GAS_URL;
-    var baslangicTarih = '';
-    var bitisTarih = '';
 
     function getUrlParam(name) {
       var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
@@ -156,18 +115,14 @@
       if (!gasUrl) { try { gasUrl = localStorage.getItem(GAS_KEY) || ''; } catch (e) {} }
     }
 
-    function gasVeriCek() {
-      if (!gasUrl) { gosterToast('GAS URL eksik!', 'error'); return Promise.resolve(false); }
-      gosterToast('GAS verileri al\u0131n\u0131yor...');
-      var fetchPromise = fetch(gasUrl + '?sheet=G%C4%B1da%20G%C3%BCvenli%C4%9Fi').then(function(res) {
-        if (!res.ok) throw new Error('Sunucu hatas\u0131: ' + res.status);
-        var ct = res.headers.get('content-type') || '';
-        if (ct.indexOf('json') < 0 && ct.indexOf('text/plain') < 0) {
-          return res.text().then(function(text) { throw new Error('GAS JSON d\u00f6nmedi (HTML sayfas\u0131 al\u0131nd\u0131). Ayarlar \u00fczerinden URL\'i kontrol edin.'); });
-        }
-        return res.json();
-      }).then(function(data) {
-        if (data.error) throw new Error('GAS hatas\u0131: ' + data.error);
+    async function gasVeriCek() {
+      if (!gasUrl) { gosterToast('GAS URL eksik!', 'error'); return false; }
+      try {
+        gosterToast('Veriler y\u00fckleniyor...');
+        var res = await fetch(gasUrl + '?sheet=G%C4%B1da%20G%C3%BCvenli%C4%9Fi');
+        if (!res.ok) { gosterToast('Sunucu hatas\u0131: ' + res.status, 'error'); return false; }
+        var data = await res.json();
+        if (data.error) { gosterToast('GAS hatas\u0131: ' + data.error, 'error'); return false; }
         if (data.data && data.data.length > 0) {
           haccpRecords = data.data.map(function(r) { return {
             id: Number(r.id) || Date.now() + Math.random(),
@@ -179,76 +134,21 @@
             nem: r.nem != null ? Number(r.nem) : undefined,
             not: r.not_ || r.not || ''
           };});
+          // Benzersiz depo adlarını kayıtlardan çıkar
           var uniqueDepos = {};
           haccpRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
           var keys = Object.keys(uniqueDepos);
           if (keys.length > 0) allDepos = keys.sort();
           gosterToast(haccpRecords.length + ' kay\u0131t y\u00fcklendi', 'success');
           return true;
+        } else {
+          gosterToast('GAS\'tan veri geldi ama bo\u015f', 'info');
+          return false;
         }
-        gosterToast('GAS\'tan veri geldi ama bo\u015f', 'info');
-        return false;
-      }).catch(function(e) {
+      } catch (e) {
         gosterToast('Ba\u011flant\u0131 hatas\u0131: ' + e.message, 'error');
         return false;
-      }).then(function(success) {
-        // GAS cevap verdi\u011finde (timeout'tan sonra bile) tabloyu g\u00fcncelle
-        if (success) { depoListesiDoldur(); renderTablosu(); }
-        return success;
-      });
-      // 5 saniye i\u00e7inde cevap gelmezse timeout
-      var timeoutPromise = new Promise(function(resolve) {
-        setTimeout(function() { resolve(false); }, 5000);
-      });
-      return Promise.race([fetchPromise, timeoutPromise]);
-    }
-
-    function showAyarlarModal() {
-      document.getElementById('gasUrlInput').value = gasUrl || '';
-      document.getElementById('ayarlarDurum').textContent = '';
-      document.getElementById('ayarlarModal').classList.add('show');
-    }
-    function kapatAyarlarModal() {
-      document.getElementById('ayarlarModal').classList.remove('show');
-    }
-    function ayarlarKaydet() {
-      var url = document.getElementById('gasUrlInput').value.trim();
-      if (url) {
-        gasUrl = url;
-        try { localStorage.setItem(GAS_KEY, url); } catch (e) {}
-        document.getElementById('ayarlarDurum').textContent = 'URL kaydedildi, veriler yükleniyor...';
-        kapatAyarlarModal();
-        gasVeriCek().then(function() { renderTablosu(); });
-      } else {
-        document.getElementById('ayarlarDurum').textContent = 'Lütfen geçerli bir URL girin.';
       }
-    }
-    function ornekVeriYukle() {
-      var bugun = new Date();
-      var bugunStr = bugun.toISOString().slice(0, 10);
-      var oncekiGun = new Date(bugun);
-      oncekiGun.setDate(oncekiGun.getDate() - 1);
-      var dunStr = oncekiGun.toISOString().slice(0, 10);
-      haccpRecords = [
-        { id: 1, type: 'sicaklik', tarih: bugunStr, saat: '08:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 2.1, nem: 85, not: 'Sabah kontrolü' },
-        { id: 2, type: 'sicaklik', tarih: bugunStr, saat: '12:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 3.0, nem: 82, not: '' },
-        { id: 3, type: 'sicaklik', tarih: bugunStr, saat: '16:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 2.5, nem: 83, not: '' },
-        { id: 4, type: 'sicaklik', tarih: bugunStr, saat: '08:00', depoAd: 'So\u011fuk Hava Deposu 6', sicaklik: 1.8, nem: 78, not: '' },
-        { id: 5, type: 'sicaklik', tarih: bugunStr, saat: '12:00', depoAd: 'So\u011fuk Hava Deposu 6', sicaklik: 2.2, nem: 80, not: 'Kap\u0131 tam kapanmam\u0131\u015ft\u0131' },
-        { id: 6, type: 'sicaklik', tarih: bugunStr, saat: '16:00', depoAd: 'So\u011fuk Hava Deposu 6', sicaklik: 2.0, nem: 79, not: '' },
-        { id: 7, type: 'sicaklik', tarih: dunStr, saat: '08:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 2.3, nem: 84, not: '' },
-        { id: 8, type: 'sicaklik', tarih: dunStr, saat: '12:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 2.8, nem: 81, not: '' },
-        { id: 9, type: 'sicaklik', tarih: dunStr, saat: '16:00', depoAd: 'So\u011fuk Hava Deposu 6', sicaklik: 1.5, nem: 76, not: '' }
-      ];
-      var uniqueDepos = {};
-      haccpRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
-      allDepos = Object.keys(uniqueDepos).sort();
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(haccpRecords)); } catch (e) {}
-      try { localStorage.setItem(DEPO_KEY, JSON.stringify(allDepos)); } catch (e) {}
-      depoListesiDoldur();
-      renderTablosu();
-      gosterToast(haccpRecords.length + ' örnek kay\u0131t yüklendi', 'success');
-      kapatAyarlarModal();
     }
 
     function formatTarihTR(t) {
@@ -292,23 +192,6 @@
       renderTablosu();
     }
 
-    function tarihFilterDegisti() {
-      baslangicTarih = document.getElementById('basTarih').value;
-      bitisTarih = document.getElementById('bitTarih').value;
-      sayfa = 0;
-      renderTablosu();
-    }
-
-    function bugunuGoster() {
-      var today = new Date().toISOString().slice(0, 10);
-      document.getElementById('basTarih').value = today;
-      document.getElementById('bitTarih').value = today;
-      baslangicTarih = today;
-      bitisTarih = today;
-      sayfa = 0;
-      renderTablosu();
-    }
-
     function depoListesiDoldur() {
       var s = document.getElementById('depoFilter');
       if (!s) return;
@@ -321,12 +204,7 @@
 
     function renderTablosu() {
       var alan = document.getElementById('tabloAlani');
-      var filtrelenmis = haccpRecords.filter(function(r) {
-        if (seciliDepo && r.depoAd !== seciliDepo) return false;
-        if (baslangicTarih && r.tarih < baslangicTarih) return false;
-        if (bitisTarih && r.tarih > bitisTarih) return false;
-        return true;
-      });
+      var filtrelenmis = seciliDepo ? haccpRecords.filter(function(r) { return r.depoAd === seciliDepo; }) : haccpRecords;
       filtrelenmis.sort(function(a, b) {
         var ta = (a.tarih || '').replace(/-/g, '') + (a.saat || '').replace(/:/g, '');
         var tb = (b.tarih || '').replace(/-/g, '') + (b.saat || '').replace(/:/g, '');
@@ -338,11 +216,7 @@
       var sayfaGorunen = filtrelenmis.slice(bas, bit);
 
       if (toplam === 0) {
-        if (haccpRecords.length === 0) {
-          alan.innerHTML = '<div class="empty">Hen\u00fcz kay\u0131t yok. <br><br><button class="btn btn-outline" onclick="showAyarlarModal()">Ayarlar</button> \u00fczerinden \u00f6rnek veri y\u00fckleyebilir veya GAS URL girebilirsiniz.</div>';
-        } else {
-          alan.innerHTML = '<div class="empty">Bu depoya ait kay\u0131t bulunamad\u0131.</div>';
-        }
+        alan.innerHTML = '<div class="empty">Bu depoya ait kay\u0131t bulunamad\u0131.</div>';
         return;
       }
       var html = '<table><thead><tr><th>Tarih</th><th>Saat</th><th>Depo Ad\u0131</th><th>S\u0131cakl\u0131k (&deg;C)</th><th>Nem (%)</th><th>Not</th></tr></thead><tbody>';
@@ -350,11 +224,7 @@
         var durum = sicaklikDurum(r.sicaklik, r.depoAd);
         var not = r.not || '\u2014';
         if (not.length > 50) not = not.slice(0, 50) + '...';
-<<<<<<< HEAD
-        html += '<tr><td data-label="Tarih">' + formatTarihTR(r.tarih) + '</td><td data-label="Saat">' + (r.saat || '\u2014') + '</td><td data-label="Depo">' + (r.depoAd || '\u2014') + '</td><td data-label="S\u0131cakl\u0131k">' + (r.sicaklik != null ? r.sicaklik.toFixed(1) : '\u2014') + ' <span class="' + durum.cls + '">' + durum.text + '</span></td><td data-label="Nem">' + (r.nem != null ? r.nem.toFixed(0) : '\u2014') + '</td><td data-label="Not">' + not + '</td></tr>';
-=======
         html += '<tr><td>' + formatTarihTR(r.tarih) + '</td><td>' + (r.saat || '\u2014') + '</td><td>' + (r.depoAd || '\u2014') + '</td><td>' + (r.sicaklik != null ? r.sicaklik.toFixed(1) : '\u2014') + ' <span class="' + durum.cls + '">' + durum.text + '</span></td><td>' + (r.nem != null ? r.nem.toFixed(0) : '\u2014') + '</td><td>' + not + '</td></tr>';
->>>>>>> 3b478431b16ac74d282d7a46e74e6f79c0b722ac
       });
       html += '</tbody></table>';
       html += '<div class="pagination">';
@@ -367,12 +237,10 @@
 
     async function init() {
       loadData();
-      // Varsay\u0131lan: bug\u00fcn\u00fcn tarihini g\u00f6ster (QR okutunca bug\u00fcn\u00fc g\u00f6rs\u00fcn)
-      var today = new Date().toISOString().slice(0, 10);
-      document.getElementById('basTarih').value = today;
-      document.getElementById('bitTarih').value = today;
-      baslangicTarih = today;
-      bitisTarih = today;
+      var gasOk = await gasVeriCek();
+      if (!gasOk && haccpRecords.length > 0) {
+        gosterToast(haccpRecords.length + ' kay\u0131t (LocalStorage)', 'info');
+      }
       // URL'den ?depo=X parametresini oku
       var directDepo = getUrlParam('depo');
       if (directDepo) {
@@ -385,13 +253,6 @@
       }
       depoListesiDoldur();
       sayfa = 0;
-      // Y\u00fckleniyor yaz\u0131s\u0131n\u0131 hemen kald\u0131r, varsa localStorage verisini g\u00f6ster
-      renderTablosu();
-      // GAS'tan g\u00fcncel veriyi \u00e7ek (5sn timeout, gelse de gelmese de tablo g\u00f6r\u00fcn\u00fcyor)
-      var gasOk = await gasVeriCek();
-      if (!gasOk && haccpRecords.length > 0) {
-        gosterToast(haccpRecords.length + ' kay\u0131t (LocalStorage)', 'info');
-      }
       renderTablosu();
     }
 
@@ -408,12 +269,7 @@
     }
 
     function pdfYap() {
-      var filtrelenmis = haccpRecords.filter(function(r) {
-        if (seciliDepo && r.depoAd !== seciliDepo) return false;
-        if (baslangicTarih && r.tarih < baslangicTarih) return false;
-        if (bitisTarih && r.tarih > bitisTarih) return false;
-        return true;
-      });
+      var filtrelenmis = seciliDepo ? haccpRecords.filter(function(r) { return r.depoAd === seciliDepo; }) : haccpRecords;
       filtrelenmis.sort(function(a, b) {
         var ta = (a.tarih || '').replace(/-/g, '') + (a.saat || '').replace(/:/g, '');
         var tb = (b.tarih || '').replace(/-/g, '') + (b.saat || '').replace(/:/g, '');
