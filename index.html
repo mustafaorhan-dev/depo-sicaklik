@@ -302,6 +302,8 @@
       if (!gasOk && haccpRecords.length > 0) {
         gosterToast(haccpRecords.length + ' kay\u0131t (LocalStorage)', 'info');
       }
+      // Dropdown'u GAS'tan gelen depo adlar\u0131yla g\u00fcncelle
+      depoListesiDoldur();
       renderTablosu();
     }
 
