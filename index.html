@@ -84,6 +84,7 @@
       </div>
       <button class="btn btn-today" onclick="bugunuGoster()">Bugün</button>
       <button class="btn btn-primary" onclick="showQrModal()">QR</button>
+      <button class="btn btn-outline" onclick="showAyarlarModal()">Ayarlar</button>
       <button class="btn btn-secondary" onclick="pdfYap()">PDF</button>
     </div>
 
@@ -102,6 +103,22 @@
       <p>Depo sıcaklık kayıtlarını içerir</p>
       <div id="qrKod"></div>
       <button class="btn btn-primary" onclick="closeQrModal()">Kapat</button>
+    </div>
+  </div>
+
+  <!-- Ayarlar Modal -->
+  <div id="ayarlarModal" class="modal-overlay" onclick="if(event.target===this)kapatAyarlarModal()">
+    <div class="modal" style="text-align:left;max-width:500px">
+      <h2 style="text-align:center">Ayarlar</h2>
+      <p style="font-size:13px;color:#555;margin-bottom:16px">GAS Web App URL'sini girin veya <strong>örnek veri</strong> yükleyin.</p>
+      <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px">GAS URL:</label>
+      <input type="url" id="gasUrlInput" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;font-family:inherit;margin-bottom:12px" placeholder="https://script.google.com/..." />
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn btn-primary" onclick="ayarlarKaydet()">Kaydet</button>
+        <button class="btn btn-outline" onclick="ornekVeriYukle()">Örnek Veri Yükle</button>
+        <button class="btn btn-secondary" onclick="kapatAyarlarModal()">Kapat</button>
+      </div>
+      <p id="ayarlarDurum" style="font-size:12px;color:#888;text-align:center"></p>
     </div>
   </div>
 
@@ -144,6 +161,10 @@
       gosterToast('GAS verileri al\u0131n\u0131yor...');
       var fetchPromise = fetch(gasUrl + '?sheet=G%C4%B1da%20G%C3%BCvenli%C4%9Fi').then(function(res) {
         if (!res.ok) throw new Error('Sunucu hatas\u0131: ' + res.status);
+        var ct = res.headers.get('content-type') || '';
+        if (ct.indexOf('json') < 0 && ct.indexOf('text/plain') < 0) {
+          return res.text().then(function(text) { throw new Error('GAS JSON d\u00f6nmedi (HTML sayfas\u0131 al\u0131nd\u0131). Ayarlar \u00fczerinden URL\'i kontrol edin.'); });
+        }
         return res.json();
       }).then(function(data) {
         if (data.error) throw new Error('GAS hatas\u0131: ' + data.error);
@@ -180,6 +201,54 @@
         setTimeout(function() { resolve(false); }, 5000);
       });
       return Promise.race([fetchPromise, timeoutPromise]);
+    }
+
+    function showAyarlarModal() {
+      document.getElementById('gasUrlInput').value = gasUrl || '';
+      document.getElementById('ayarlarDurum').textContent = '';
+      document.getElementById('ayarlarModal').classList.add('show');
+    }
+    function kapatAyarlarModal() {
+      document.getElementById('ayarlarModal').classList.remove('show');
+    }
+    function ayarlarKaydet() {
+      var url = document.getElementById('gasUrlInput').value.trim();
+      if (url) {
+        gasUrl = url;
+        try { localStorage.setItem(GAS_KEY, url); } catch (e) {}
+        document.getElementById('ayarlarDurum').textContent = 'URL kaydedildi, veriler yükleniyor...';
+        kapatAyarlarModal();
+        gasVeriCek().then(function() { renderTablosu(); });
+      } else {
+        document.getElementById('ayarlarDurum').textContent = 'Lütfen geçerli bir URL girin.';
+      }
+    }
+    function ornekVeriYukle() {
+      var bugun = new Date();
+      var bugunStr = bugun.toISOString().slice(0, 10);
+      var oncekiGun = new Date(bugun);
+      oncekiGun.setDate(oncekiGun.getDate() - 1);
+      var dunStr = oncekiGun.toISOString().slice(0, 10);
+      haccpRecords = [
+        { id: 1, type: 'sicaklik', tarih: bugunStr, saat: '08:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 2.1, nem: 85, not: 'Sabah kontrolü' },
+        { id: 2, type: 'sicaklik', tarih: bugunStr, saat: '12:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 3.0, nem: 82, not: '' },
+        { id: 3, type: 'sicaklik', tarih: bugunStr, saat: '16:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 2.5, nem: 83, not: '' },
+        { id: 4, type: 'sicaklik', tarih: bugunStr, saat: '08:00', depoAd: 'So\u011fuk Hava Deposu 6', sicaklik: 1.8, nem: 78, not: '' },
+        { id: 5, type: 'sicaklik', tarih: bugunStr, saat: '12:00', depoAd: 'So\u011fuk Hava Deposu 6', sicaklik: 2.2, nem: 80, not: 'Kap\u0131 tam kapanmam\u0131\u015ft\u0131' },
+        { id: 6, type: 'sicaklik', tarih: bugunStr, saat: '16:00', depoAd: 'So\u011fuk Hava Deposu 6', sicaklik: 2.0, nem: 79, not: '' },
+        { id: 7, type: 'sicaklik', tarih: dunStr, saat: '08:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 2.3, nem: 84, not: '' },
+        { id: 8, type: 'sicaklik', tarih: dunStr, saat: '12:00', depoAd: 'So\u011fuk Hava Deposu 5', sicaklik: 2.8, nem: 81, not: '' },
+        { id: 9, type: 'sicaklik', tarih: dunStr, saat: '16:00', depoAd: 'So\u011fuk Hava Deposu 6', sicaklik: 1.5, nem: 76, not: '' }
+      ];
+      var uniqueDepos = {};
+      haccpRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
+      allDepos = Object.keys(uniqueDepos).sort();
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(haccpRecords)); } catch (e) {}
+      try { localStorage.setItem(DEPO_KEY, JSON.stringify(allDepos)); } catch (e) {}
+      depoListesiDoldur();
+      renderTablosu();
+      gosterToast(haccpRecords.length + ' örnek kay\u0131t yüklendi', 'success');
+      kapatAyarlarModal();
     }
 
     function formatTarihTR(t) {
@@ -269,7 +338,11 @@
       var sayfaGorunen = filtrelenmis.slice(bas, bit);
 
       if (toplam === 0) {
-        alan.innerHTML = '<div class="empty">Bu depoya ait kay\u0131t bulunamad\u0131.</div>';
+        if (haccpRecords.length === 0) {
+          alan.innerHTML = '<div class="empty">Hen\u00fcz kay\u0131t yok. <br><br><button class="btn btn-outline" onclick="showAyarlarModal()">Ayarlar</button> \u00fczerinden \u00f6rnek veri y\u00fckleyebilir veya GAS URL girebilirsiniz.</div>';
+        } else {
+          alan.innerHTML = '<div class="empty">Bu depoya ait kay\u0131t bulunamad\u0131.</div>';
+        }
         return;
       }
       var html = '<table><thead><tr><th>Tarih</th><th>Saat</th><th>Depo Ad\u0131</th><th>S\u0131cakl\u0131k (&deg;C)</th><th>Nem (%)</th><th>Not</th></tr></thead><tbody>';
