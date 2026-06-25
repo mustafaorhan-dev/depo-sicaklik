@@ -139,17 +139,14 @@
       if (!gasUrl) { try { gasUrl = localStorage.getItem(GAS_KEY) || ''; } catch (e) {} }
     }
 
-    async function gasVeriCek() {
-      if (!gasUrl) { gosterToast('GAS URL eksik!', 'error'); return false; }
-      try {
-        gosterToast('Veriler y\u00fckleniyor...');
-        var controller = new AbortController();
-        var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
-        var res = await fetch(gasUrl + '?sheet=G%C4%B1da%20G%C3%BCvenli%C4%9Fi', { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (!res.ok) { gosterToast('Sunucu hatas\u0131: ' + res.status, 'error'); return false; }
-        var data = await res.json();
-        if (data.error) { gosterToast('GAS hatas\u0131: ' + data.error, 'error'); return false; }
+    function gasVeriCek() {
+      if (!gasUrl) { gosterToast('GAS URL eksik!', 'error'); return Promise.resolve(false); }
+      gosterToast('GAS verileri al\u0131n\u0131yor...');
+      var fetchPromise = fetch(gasUrl + '?sheet=G%C4%B1da%20G%C3%BCvenli%C4%9Fi').then(function(res) {
+        if (!res.ok) throw new Error('Sunucu hatas\u0131: ' + res.status);
+        return res.json();
+      }).then(function(data) {
+        if (data.error) throw new Error('GAS hatas\u0131: ' + data.error);
         if (data.data && data.data.length > 0) {
           haccpRecords = data.data.map(function(r) { return {
             id: Number(r.id) || Date.now() + Math.random(),
@@ -161,25 +158,28 @@
             nem: r.nem != null ? Number(r.nem) : undefined,
             not: r.not_ || r.not || ''
           };});
-          // Benzersiz depo adlarını kayıtlardan çıkar
           var uniqueDepos = {};
           haccpRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
           var keys = Object.keys(uniqueDepos);
           if (keys.length > 0) allDepos = keys.sort();
           gosterToast(haccpRecords.length + ' kay\u0131t y\u00fcklendi', 'success');
           return true;
-        } else {
-          gosterToast('GAS\'tan veri geldi ama bo\u015f', 'info');
-          return false;
         }
-      } catch (e) {
-        if (e.name === 'AbortError') {
-          gosterToast('Sunucu yanıt vermedi, yerel kayıtlar gösteriliyor', 'info');
-        } else {
-          gosterToast('Bağlantı hatası: ' + e.message, 'error');
-        }
+        gosterToast('GAS\'tan veri geldi ama bo\u015f', 'info');
         return false;
-      }
+      }).catch(function(e) {
+        gosterToast('Ba\u011flant\u0131 hatas\u0131: ' + e.message, 'error');
+        return false;
+      }).then(function(success) {
+        // GAS cevap verdi\u011finde (timeout'tan sonra bile) tabloyu g\u00fcncelle
+        if (success) { depoListesiDoldur(); renderTablosu(); }
+        return success;
+      });
+      // 5 saniye i\u00e7inde cevap gelmezse timeout
+      var timeoutPromise = new Promise(function(resolve) {
+        setTimeout(function() { resolve(false); }, 5000);
+      });
+      return Promise.race([fetchPromise, timeoutPromise]);
     }
 
     function formatTarihTR(t) {
@@ -312,9 +312,9 @@
       }
       depoListesiDoldur();
       sayfa = 0;
-      // Varsa localStorage'daki veriyi hemen g\u00f6ster
-      if (haccpRecords.length > 0) renderTablosu();
-      // GAS'tan g\u00fcncel veriyi \u00e7ek (timeout 10sn)
+      // Y\u00fckleniyor yaz\u0131s\u0131n\u0131 hemen kald\u0131r, varsa localStorage verisini g\u00f6ster
+      renderTablosu();
+      // GAS'tan g\u00fcncel veriyi \u00e7ek (5sn timeout, gelse de gelmese de tablo g\u00f6r\u00fcn\u00fcyor)
       var gasOk = await gasVeriCek();
       if (!gasOk && haccpRecords.length > 0) {
         gosterToast(haccpRecords.length + ' kay\u0131t (LocalStorage)', 'info');
