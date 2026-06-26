@@ -83,6 +83,7 @@
         <input type="date" id="bitTarih" onchange="tarihFilterDegisti()">
       </div>
       <button class="btn btn-today" onclick="bugunuGoster()">Bugün</button>
+      <button class="btn btn-outline" onclick="sonIkiGun()">Dün &amp; Bugün</button>
       <button class="btn btn-primary" onclick="showQrModal()">QR</button>
       <button class="btn btn-secondary" onclick="pdfYap()">PDF</button>
     </div>
@@ -217,6 +218,20 @@
       if (v >= min && v <= max) return { text: 'Uygun', cls: 'badge-ok' };
       if (v < min) return { text: 'D\u00fc\u015f\u00fck', cls: 'badge-warn' };
       return { text: 'Y\u00fcksek', cls: 'badge-err' };
+    }
+
+    function sonIkiGun() {
+      var d = new Date();
+      var bugun = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      var dun = new Date(d);
+      dun.setDate(dun.getDate() - 1);
+      var dunStr = dun.getFullYear() + '-' + String(dun.getMonth() + 1).padStart(2, '0') + '-' + String(dun.getDate()).padStart(2, '0');
+      document.getElementById('basTarih').value = dunStr;
+      document.getElementById('bitTarih').value = bugun;
+      baslangicTarih = dunStr;
+      bitisTarih = bugun;
+      sayfa = 0;
+      renderTablosu();
     }
 
     function depoDegisti() {
