@@ -76,14 +76,9 @@
     <div class="toolbar">
       <label for="depoFilter">Depo:</label>
       <select id="depoFilter" onchange="depoDegisti()"></select>
-      <div class="date-group">
-        <label for="basTarih">Tarih:</label>
-        <input type="date" id="basTarih" onchange="tarihFilterDegisti()">
-        <span style="font-size:13px;color:#888;">–</span>
-        <input type="date" id="bitTarih" onchange="tarihFilterDegisti()">
-      </div>
       <button class="btn btn-today" onclick="bugunuGoster()">Bugün</button>
       <button class="btn btn-outline" onclick="sonIkiGun()">Dün &amp; Bugün</button>
+      <button class="btn btn-outline" onclick="tumuGoster()">Tümü</button>
       <button class="btn btn-primary" onclick="showQrModal()">QR</button>
       <button class="btn btn-secondary" onclick="pdfYap()">PDF</button>
     </div>
@@ -225,11 +220,15 @@
       var bugun = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       var dun = new Date(d);
       dun.setDate(dun.getDate() - 1);
-      var dunStr = dun.getFullYear() + '-' + String(dun.getMonth() + 1).padStart(2, '0') + '-' + String(dun.getDate()).padStart(2, '0');
-      document.getElementById('basTarih').value = dunStr;
-      document.getElementById('bitTarih').value = bugun;
-      baslangicTarih = dunStr;
+      baslangicTarih = dun.getFullYear() + '-' + String(dun.getMonth() + 1).padStart(2, '0') + '-' + String(dun.getDate()).padStart(2, '0');
       bitisTarih = bugun;
+      sayfa = 0;
+      renderTablosu();
+    }
+
+    function tumuGoster() {
+      baslangicTarih = '';
+      bitisTarih = '';
       sayfa = 0;
       renderTablosu();
     }
@@ -250,11 +249,8 @@
 
     function bugunuGoster() {
       var d = new Date();
-      var today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      document.getElementById('basTarih').value = today;
-      document.getElementById('bitTarih').value = today;
-      baslangicTarih = today;
-      bitisTarih = today;
+      baslangicTarih = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      bitisTarih = baslangicTarih;
       sayfa = 0;
       renderTablosu();
     }
