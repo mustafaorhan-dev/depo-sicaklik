@@ -78,7 +78,6 @@
       <select id="depoFilter" onchange="depoDegisti()"></select>
       <button class="btn btn-today" onclick="bugunuGoster()">Bugün</button>
       <button class="btn btn-outline" onclick="sonIkiGun()">Dün &amp; Bugün</button>
-      <button class="btn btn-outline" onclick="tumuGoster()">Tümü</button>
       <button class="btn btn-primary" onclick="showQrModal()">QR</button>
       <button class="btn btn-secondary" onclick="pdfYap()">PDF</button>
     </div>
@@ -215,13 +214,6 @@
       dun.setDate(dun.getDate() - 1);
       baslangicTarih = dun.getFullYear() + '-' + String(dun.getMonth() + 1).padStart(2, '0') + '-' + String(dun.getDate()).padStart(2, '0');
       bitisTarih = bugun;
-      sayfa = 0;
-      renderTablosu();
-    }
-
-    function tumuGoster() {
-      baslangicTarih = '';
-      bitisTarih = '';
       sayfa = 0;
       renderTablosu();
     }
