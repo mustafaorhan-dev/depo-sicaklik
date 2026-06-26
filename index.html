@@ -111,7 +111,7 @@
     var seciliDepo = '';
     var sayfa = 0;
     var sayfaBoyutu = 10;
-    var DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyRVKf_dPe-7p2i_AzE9o4aO4ZZHlfysJky6BtSsjfQxYsiEB84VhILE1M-TAdg2b-u5g/exec';
+    var DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbynBf7pBHQrZ0Vh3lSyTyceozIBXF_uZP2ZIkkd76C7SkSqKoRRJANC68LGCqTAXYHCCg/exec';
     var gasUrl = getUrlParam('gas') || DEFAULT_GAS_URL;
     var baslangicTarih = '';
     var bitisTarih = '';
@@ -144,7 +144,7 @@
         var data = await res.json();
         if (data.error) { gosterToast('GAS hatas\u0131: ' + data.error, 'error'); return false; }
         if (data.data && data.data.length > 0) {
-          var yeniKayitlar = data.data.map(function(r) { return {
+          haccpRecords = data.data.map(function(r) { return {
             id: Number(r.id) || Date.now() + Math.random(),
             type: r.type || 'sicaklik',
             tarih: normalizeDate(r.tarih || ''),
@@ -154,22 +154,15 @@
             nem: r.nem != null ? Number(r.nem) : undefined,
             not: r.not_ || r.not || ''
           };});
-          // Sadece HACCP verisi varsa (depoAd dolu) güncelle, yoksa localStorage'dakini koru
-          var haccpVar = yeniKayitlar.some(function(r) { return r.depoAd && r.depoAd !== 'Depo '; });
-          if (haccpVar) {
-            haccpRecords = yeniKayitlar;
-            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(haccpRecords)); } catch (_) {}
-            var uniqueDepos = {};
-            haccpRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
-            var keys = Object.keys(uniqueDepos);
-            if (keys.length > 0) allDepos = keys.sort();
-            gosterToast(haccpRecords.length + ' kay\u0131t y\u00fcklendi', 'success');
-          } else {
-            gosterToast('LocalStorage\'daki veriler g\u00f6steriliyor', 'info');
-          }
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(haccpRecords)); } catch (_) {}
+          var uniqueDepos = {};
+          haccpRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
+          var keys = Object.keys(uniqueDepos);
+          if (keys.length > 0) allDepos = keys.sort();
+          gosterToast(haccpRecords.length + ' kay\u0131t y\u00fcklendi', 'success');
           return true;
         } else {
-          gosterToast('LocalStorage\'daki veriler g\u00f6steriliyor', 'info');
+          gosterToast('GAS\'tan veri geldi ama bo\u015f', 'info');
           return false;
         }
       } catch (e) {
@@ -236,13 +229,6 @@
     function depoDegisti() {
       var s = document.getElementById('depoFilter');
       seciliDepo = s ? s.value : '';
-      sayfa = 0;
-      renderTablosu();
-    }
-
-    function tarihFilterDegisti() {
-      baslangicTarih = document.getElementById('basTarih').value;
-      bitisTarih = document.getElementById('bitTarih').value;
       sayfa = 0;
       renderTablosu();
     }
