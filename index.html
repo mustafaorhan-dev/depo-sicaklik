@@ -318,20 +318,24 @@
         var tb = (b.tarih || '').replace(/-/g, '') + (b.saat || '').replace(/:/g, '');
         return tb.localeCompare(ta);
       });
-      var rows = [['Tarih', 'Saat', 'Depo Ad\u0131', 'S\u0131cakl\u0131k', 'Nem', 'Not']];
-      filtrelenmis.forEach(function(r) {
-        rows.push([formatTarihTR(r.tarih), r.saat || '', r.depoAd || '', r.sicaklik != null ? String(r.sicaklik) : '', r.nem != null ? String(r.nem) : '', r.not || '']);
-      });
-      var csv = rows.map(function(row) {
-        return row.map(function(cell) { return '"' + String(cell).replace(/"/g, '""') + '"'; }).join(',');
-      }).join('\n');
-      var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'sicaklik_kayitlari.csv';
-      a.click();
-      URL.revokeObjectURL(a.href);
-      gosterToast('CSV indiriliyor...', 'success');
+      var rows = filtrelenmis.map(function(r) {
+        var durum = sicaklikDurum(r.sicaklik, r.depoAd);
+        return '<tr><td>' + formatTarihTR(r.tarih) + '</td><td>' + (r.saat || '\u2014') + '</td><td>' + (r.depoAd || '\u2014') + '</td><td>' + (r.sicaklik != null ? r.sicaklik.toFixed(1) : '\u2014') + '</td><td>' + (r.nem != null ? r.nem.toFixed(0) : '\u2014') + '</td><td class="' + durum.cls + '">' + durum.text + '</td></tr>';
+      }).join('');
+      var detay = (seciliDepo ? seciliDepo : 'T\u00fcm depolar') + ' | ' + (baslangicTarih ? formatTarihTR(baslangicTarih) : '...') + ' - ' + (bitisTarih ? formatTarihTR(bitisTarih) : '...');
+      var win = window.open('', '_blank');
+      win.document.write('<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"/><title>So\u011fuk Depo S\u0131cakl\u0131k Kay\u0131tlar\u0131</title><style>');
+      win.document.write('body{font-family:Arial,sans-serif;margin:20px;color:#333}h1{font-size:18px;margin-bottom:4px}p{font-size:12px;color:#666;margin-bottom:15px}');
+      win.document.write('table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px 8px;text-align:left;border-bottom:1px solid #ddd}th{background:#f5f5f5;font-weight:600}');
+      win.document.write('.badge-ok{color:#10b981}.badge-warn{color:#f59e0b}.badge-err{color:#ef4444}');
+      win.document.write('@media print{body{margin:10mm}button{display:none}}');
+      win.document.write('</style></head><body>');
+      win.document.write('<h1>So\u011fuk Depo S\u0131cakl\u0131k Kay\u0131tlar\u0131</h1>');
+      win.document.write('<p>' + detay + ' &mdash; ' + filtrelenmis.length + ' kay\u0131t</p>');
+      win.document.write('<table><thead><tr><th>Tarih</th><th>Saat</th><th>Depo</th><th>S\u0131cakl\u0131k (&deg;C)</th><th>Nem (%)</th><th>Durum</th></tr></thead><tbody>' + rows + '</tbody></table>');
+      win.document.write('</body></html>');
+      win.document.close();
+      setTimeout(function() { win.print(); }, 500);
     }
 
     init();
