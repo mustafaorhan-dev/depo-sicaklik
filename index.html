@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>Soğuk Depo Sıcaklık Kayıtları</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #222; line-height: 1.5; padding: 16px; }
@@ -77,6 +78,12 @@
 
     <div class="toolbar">
       <div class="depo-filtreler"><span class="label">Depo:</span><span id="depoFiltreler"></span></div>
+      <div class="date-group">
+        <label>Tarih:</label>
+        <input type="date" id="tarihBas" onchange="baslangicTarih=this.value;sayfa=0;renderTablosu()" />
+        <span style="color:#888;font-size:13px">—</span>
+        <input type="date" id="tarihBit" onchange="bitisTarih=this.value;sayfa=0;renderTablosu()" />
+      </div>
       <button class="btn btn-today" onclick="bugunuGoster()">Bugün</button>
       <button class="btn btn-outline" onclick="sonIkiGun()">Dün</button>
       <button class="btn btn-primary" onclick="showQrModal()">QR</button>
@@ -102,17 +109,14 @@
   </div>
 
   <script>
-    var STORAGE_KEY = 'haccp_records';
-    var DEPO_KEY = 'haccp_depo_adlari';
-    var GAS_KEY = 'gsheet_webapp_url';
-    var DEFAULT_DEPOLAR = ['So\u011fuk Hava Deposu 5', 'So\u011fuk Hava Deposu 6', 'So\u011fuk Hava Deposu 7', 'So\u011fuk Hava Deposu 8'];
+    var SUPABASE_URL = 'https://ydbeltktutcxfeosqmai.supabase.co';
+    var SUPABASE_ANON_KEY = 'sb_publishable_-c9dOMEYdhnFFmRrW3In9Q_CS8YREh4';
+    var supabaseClient = null;
     var haccpRecords = [];
     var allDepos = [];
     var seciliDepo = '';
     var sayfa = 0;
     var sayfaBoyutu = 10;
-    var DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbynBf7pBHQrZ0Vh3lSyTyceozIBXF_uZP2ZIkkd76C7SkSqKoRRJANC68LGCqTAXYHCCg/exec';
-    var gasUrl = getUrlParam('gas') || DEFAULT_GAS_URL;
     var baslangicTarih = '';
     var bitisTarih = '';
 
@@ -129,70 +133,10 @@
       el._t = setTimeout(function() { el.className = 'toast'; }, 4000);
     }
 
-    function loadData() {
-      try { var s = localStorage.getItem(STORAGE_KEY); haccpRecords = s ? JSON.parse(s) : []; } catch (e) { haccpRecords = []; }
-      try { var d = localStorage.getItem(DEPO_KEY); allDepos = d ? JSON.parse(d) : [...DEFAULT_DEPOLAR]; } catch (e) { allDepos = [...DEFAULT_DEPOLAR]; }
-      if (!gasUrl) { try { gasUrl = localStorage.getItem(GAS_KEY) || ''; } catch (e) {} }
-    }
-
-    async function gasVeriCek() {
-      if (!gasUrl) { gosterToast('GAS URL eksik!', 'error'); return false; }
-      try {
-        gosterToast('Veriler y\u00fckleniyor...');
-        var res = await fetch(gasUrl + '?sheet=G%C4%B1da%20G%C3%BCvenli%C4%9Fi');
-        if (!res.ok) { gosterToast('Sunucu hatas\u0131: ' + res.status, 'error'); return false; }
-        var data = await res.json();
-        if (data.error) { gosterToast('GAS hatas\u0131: ' + data.error, 'error'); return false; }
-        if (data.data && data.data.length > 0) {
-          haccpRecords = data.data.map(function(r) { return {
-            id: Number(r.id) || Date.now() + Math.random(),
-            type: r.type || 'sicaklik',
-            tarih: normalizeDate(r.tarih || ''),
-            saat: normalizeSaat(r.saat || ''),
-            depoAd: r.depoAd || ('Depo ' + (r.depoNo || '')),
-            sicaklik: r.sicaklik != null ? Number(r.sicaklik) : undefined,
-            nem: r.nem != null ? Number(r.nem) : undefined,
-            not: r.not_ || r.not || ''
-          };});
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(haccpRecords)); } catch (_) {}
-          var uniqueDepos = {};
-          haccpRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
-          var keys = Object.keys(uniqueDepos);
-          if (keys.length > 0) allDepos = keys.sort();
-          gosterToast(haccpRecords.length + ' kay\u0131t y\u00fcklendi', 'success');
-          return true;
-        } else {
-          gosterToast('GAS\'tan veri geldi ama bo\u015f', 'info');
-          return false;
-        }
-      } catch (e) {
-        gosterToast('Ba\u011flant\u0131 hatas\u0131: ' + e.message, 'error');
-        return false;
-      }
-    }
-
     function formatTarihTR(t) {
       if (!t) return '\u2014';
       var m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       return m ? m[3] + '.' + m[2] + '.' + m[1] : t;
-    }
-
-    function normalizeDate(v) {
-      if (!v) return '';
-      if (typeof v === 'number') {
-        var d = new Date(1899, 11, 30 + v);
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      }
-      if (typeof v === 'string' && v.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-        var p = v.split('.');
-        return p[2] + '-' + p[1] + '-' + p[0];
-      }
-      return String(v).slice(0,10);
-    }
-
-    function normalizeSaat(v) {
-      if (!v) return '';
-      return String(v).slice(0,5);
     }
 
     function sicaklikDurum(sicaklik, depoAd) {
@@ -286,28 +230,66 @@
       alan.innerHTML = html;
     }
 
+    async function supabaseVeriCek() {
+      try {
+        if (typeof supabase === 'undefined' || !supabase.createClient) {
+          gosterToast('Supabase k\u00fct\u00fcphanesi y\u00fcklenemedi.', 'error');
+          return false;
+        }
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        var { data: hData, error: hErr } = await supabaseClient
+          .from('haccp_records')
+          .select('*')
+          .eq('type', 'sicaklik')
+          .order('tarih', { ascending: false })
+          .limit(5000);
+
+        if (hErr) { gosterToast('Supabase hatas\u0131: ' + hErr.message, 'error'); return false; }
+
+        haccpRecords = (hData || []).map(function(r) { return {
+          id: Number(r.id) || Date.now(),
+          tarih: r.tarih || '',
+          saat: r.saat || '',
+          depoAd: r.depo_ad || '',
+          sicaklik: r.sicaklik != null ? Number(r.sicaklik) : undefined,
+          nem: r.nem != null ? Number(r.nem) : undefined,
+          not: r.not_ || ''
+        };});
+
+        var { data: dData } = await supabaseClient.from('haccp_depo_adlari').select('ad');
+        if (dData && dData.length > 0) {
+          allDepos = dData.map(function(d) { return d.ad; }).sort();
+        }
+        // depo adlar\u0131n\u0131 kay\u0131tlardan da topla
+        var uniqueDepos = {};
+        haccpRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
+        Object.keys(uniqueDepos).forEach(function(d) { if (allDepos.indexOf(d) < 0) allDepos.push(d); });
+        allDepos.sort();
+
+        gosterToast(haccpRecords.length + ' kay\u0131t y\u00fcklendi', 'success');
+        return true;
+      } catch (e) {
+        gosterToast('Ba\u011flant\u0131 hatas\u0131: ' + e.message, 'error');
+        return false;
+      }
+    }
+
     async function init() {
-      loadData();
+      var yukleniyor = document.getElementById('yukleniyor');
+      if (yukleniyor) yukleniyor.textContent = 'Supabase\'ten veriler y\u00fckleniyor...';
+
       // URL'den ?depo=X parametresini oku
       var directDepo = getUrlParam('depo');
-      if (directDepo) {
-        if (allDepos.indexOf(directDepo) < 0) {
-          allDepos.push(directDepo);
-          allDepos.sort();
-        }
-        document.getElementById('depoFilter').value = directDepo;
-        seciliDepo = directDepo;
-      }
+      if (directDepo) seciliDepo = directDepo;
+
       depoListesiDoldur();
-      sayfa = 0;
-      // Y\u00fckleniyor yaz\u0131s\u0131n\u0131 hemen kald\u0131r
       renderTablosu();
-      // GAS'tan g\u00fcncel veriyi \u00e7ek (orijinal kod, de\u011fi\u015fmedi)
-      var gasOk = await gasVeriCek();
-      if (!gasOk && haccpRecords.length > 0) {
-        gosterToast(haccpRecords.length + ' kay\u0131t (LocalStorage)', 'info');
+
+      var ok = await supabaseVeriCek();
+      if (!ok && haccpRecords.length === 0) {
+        gosterToast('Veri y\u00fcklenemedi. Sayfay\u0131 yenileyin.', 'error');
       }
-      // Dropdown'u GAS'tan gelen depo adlar\u0131yla g\u00fcncelle
       depoListesiDoldur();
       renderTablosu();
     }
