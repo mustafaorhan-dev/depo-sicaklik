@@ -161,6 +161,7 @@
     var sicaklikRecords = [];
     var temizlikRecords = [];
     var allDepos = [
+      'Eksi Soğuk Hava Deposu 9',
       'Et Deposu',
       'Soğuk Hava Deposu 1',
       'Soğuk Hava Deposu 2',
@@ -171,6 +172,8 @@
       'Soğuk Hava Deposu 7',
       'Soğuk Hava Deposu 8'
     ];
+    // Depo limitleri: { depoAd: {min, max} } - Depo Tanimlari'ndan okunur
+    var depoLimitleri = {};
     var seciliDepo = '';
     var sayfa = 0;
     var sayfaBoyutu = 20;
@@ -200,10 +203,17 @@
       var v = parseFloat(sicaklik);
       if (isNaN(v)) return { text: '—', cls: '' };
       var min, max;
-      var da = String(depoAd || '').toLowerCase();
-      if (da.includes('dondurucu') || da.includes('donduruc')) { min = -24; max = -18; }
-      else if (da.includes('so\u011fuk') || da.includes('soguk')) { min = 0; max = 4; }
-      else return { text: '—', cls: '' };
+      // 1) Depo Tanimlari'ndaki GERCEK limitler
+      var l = depoLimitleri[String(depoAd || '')];
+      if (l && l.min != null && l.max != null) {
+        min = Number(l.min); max = Number(l.max);
+      } else {
+        // 2) Limit yoksa yedek kural
+        var da = String(depoAd || '').toLowerCase();
+        if (da.includes('dondurucu') || da.includes('donduruc')) { min = -24; max = -18; }
+        else if (da.includes('so\u011fuk') || da.includes('soguk')) { min = 0; max = 4; }
+        else return { text: '—', cls: '' };
+      }
       if (v >= min && v <= max) return { text: 'Uygun', cls: 'badge-ok' };
       if (v < min) return { text: 'D\u00fc\u015f\u00fck', cls: 'badge-warn' };
       return { text: 'Y\u00fcksek', cls: 'badge-err' };
@@ -330,22 +340,19 @@
       if (yukleniyor) yukleniyor.style.display = 'none';
 
       var durumRenk = { beklemede: 'badge-beklemede', onayli: 'badge-onayli', reddedildi: 'badge-reddedildi' };
-      var durumEtiket = { beklemede: 'Beklemede', onayli: 'Onayl\u0131', reddedildi: 'Reddedildi' };
-
-      var html = '<table><thead><tr><th>Tarih</th><th>Depo</th><th>Sabah</th><th>\u00d6\u011flen</th><th>Ak\u015fam</th><th>Durum</th><th>Not</th></tr></thead><tbody>';
+      var durumEtiket = { beklemede: 'Beklemede', onayli: 'Onaylı', reddedildi: 'Reddedildi' };
+      // Her zaman dilemi AYRI SUTUN (baslik sayisi = hucre sayisi)
+      var html = '<table><thead><tr><th>Tarih</th><th>Depo</th><th style="text-align:center">Sabah</th><th style="text-align:center">Öğle</th><th style="text-align:center">Akşam</th><th>Onay</th><th>Onaylayan</th><th>Not</th></tr></thead><tbody>';
       filtrelenmis.forEach(function(r) {
-        var isaretler = [];
-        if (r.sabah) isaretler.push('<span class="pill"><span class="pill-dot dot-ok"></span> Sabah</span>');
-        if (r.ogle) isaretler.push('<span class="pill"><span class="pill-dot dot-ogle"></span> \u00d6\u011flen</span>');
-        if (r.aksam) isaretler.push('<span class="pill"><span class="pill-dot dot-aksam"></span> Ak\u015fam</span>');
-        if (isaretler.length === 0) isaretler.push('<span class="pill"><span class="pill-dot dot-none"></span> Yok</span>');
-
         html += '<tr>';
         html += '<td data-label="Tarih">' + formatTarihTR(r.tarih) + '</td>';
-        html += '<td data-label="Depo"><strong>' + (r.depo_ad || '\u2014') + '</strong></td>';
-        html += '<td data-label="Zamanlar">' + isaretler.join(' ') + '</td>';
-        html += '<td data-label="Durum"><span class="' + (durumRenk[r.durum] || '') + '">' + (durumEtiket[r.durum] || r.durum) + '</span></td>';
-        html += '<td data-label="Not">' + (r.not_ || '\u2014') + '</td>';
+        html += '<td data-label="Depo"><strong>' + (r.depo_ad || '—') + '</strong></td>';
+        html += '<td data-label="Sabah" style="text-align:center">' + (r.sabah ? '<span class="pill"><span class="pill-dot dot-ok"></span>✓</span>' : '<span style="color:#94a3b8">—</span>') + '</td>';
+        html += '<td data-label="Öğle" style="text-align:center">' + (r.ogle ? '<span class="pill"><span class="pill-dot dot-ogle"></span>✓</span>' : '<span style="color:#94a3b8">—</span>') + '</td>';
+        html += '<td data-label="Akşam" style="text-align:center">' + (r.aksam ? '<span class="pill"><span class="pill-dot dot-aksam"></span>✓</span>' : '<span style="color:#94a3b8">—</span>') + '</td>';
+        html += '<td data-label="Onay"><span class="' + (durumRenk[r.durum] || '') + '">' + (durumEtiket[r.durum] || r.durum) + '</span></td>';
+        html += '<td data-label="Onaylayan"><span style="font-size:12px;color:#64748b">' + (r.onaylayan || '—') + '</span></td>';
+        html += '<td data-label="Not">' + (r.not_ || '—') + '</td>';
         html += '</tr>';
       });
       html += '</tbody></table>';
@@ -389,8 +396,32 @@
         }
 
         // Depo listesini kay\u0131tlardan da topla
-        var uniqueDepos = {};
+    // Depo tanimlari (ad + limitler) - herkese acik sayfa icin
+      try {
+        var { data: dData } = await supabaseClient
+          .from('haccp_depo_adlari')
+          .select('ad, min_limit, max_limit')
+          .order('ad');
+        if (dData && dData.length) {
+          var sunucuDepolar = [];
+          dData.forEach(function(r) {
+            var ad = String(r.ad || '').trim();
+            if (!ad) return;
+            sunucuDepolar.push(ad);
+            depoLimitleri[ad] = {
+              min: r.min_limit != null ? Number(r.min_limit) : null,
+              max: r.max_limit != null ? Number(r.max_limit) : null
+            };
+          });
+          allDepos = sunucuDepolar;
+        }
+      } catch (e) {
+        console.warn('Depo tanimlari okunamadi:', e);
+      }
+      // Kayitlarda gecen depolar da listeye eklenir
+      var uniqueDepos = {};
         sicaklikRecords.forEach(function(r) { if (r.depoAd) uniqueDepos[r.depoAd] = true; });
+      temizlikRecords.forEach(function(r) { if (r.depo_ad) uniqueDepos[r.depo_ad] = true; });
         Object.keys(uniqueDepos).forEach(function(d) { if (allDepos.indexOf(d) < 0) allDepos.push(d); });
         allDepos.sort();
 
@@ -412,7 +443,9 @@
             ogle: r.ogle === true || r.ogle === 1 || r.ogle === 'true',
             aksam: r.aksam === true || r.aksam === 1 || r.aksam === 'true',
             not_: r.not_ || '',
-            durum: r.durum || 'beklemede'
+            durum: r.durum || 'beklemede',
+            onaylayan: r.onaylayan || '',
+            onay_tarihi: r.onay_tarihi || ''
           }; });
         }
 
@@ -471,11 +504,13 @@
       }).join('');
 
       var tRows = temizlikFiltre.map(function(r) {
-        var isaretler = [];
-        if (r.sabah) isaretler.push('Sabah');
-        if (r.ogle) isaretler.push('\u00d6\u011flen');
-        if (r.aksam) isaretler.push('Ak\u015fam');
-        return '<tr><td>' + formatTarihTR(r.tarih) + '</td><td>' + (r.depo_ad || '\u2014') + '</td><td>' + (isaretler.join(', ') || '\u2014') + '</td><td>' + (r.durum || 'beklemede') + '</td><td>' + (r.not_ || '\u2014') + '</td></tr>';
+        return '<tr><td>' + formatTarihTR(r.tarih) + '</td><td>' + (r.depo_ad || '—') + '</td>'
+          + '<td style="text-align:center">' + (r.sabah ? 'X' : '') + '</td>'
+          + '<td style="text-align:center">' + (r.ogle ? 'X' : '') + '</td>'
+          + '<td style="text-align:center">' + (r.aksam ? 'X' : '') + '</td>'
+          + '<td>' + (r.durum || 'beklemede') + '</td>'
+          + '<td>' + (r.onaylayan || '') + '</td>'
+          + '<td>' + (r.not_ || '—') + '</td></tr>';
       }).join('');
 
       var detay = (seciliDepo ? seciliDepo : 'T\u00fcm depolar') + ' | ' + (baslangicTarih ? formatTarihTR(baslangicTarih) : '...') + ' - ' + (bitisTarih ? formatTarihTR(bitisTarih) : '...');
@@ -491,7 +526,7 @@
       win.document.write('<h2>S\u0131cakl\u0131k Kayıtlar\u0131 (' + sicaklikFiltre.length + ')</h2>');
       win.document.write('<table><thead><tr><th>Tarih</th><th>Saat</th><th>Depo</th><th>S\u0131cakl\u0131k (&deg;C)</th><th>Nem (%)</th><th>Durum</th><th>Not</th></tr></thead><tbody>' + sRows + '</tbody></table>');
       win.document.write('<h2>Temizlik Kayıtlar\u0131 (' + temizlikFiltre.length + ')</h2>');
-      win.document.write('<table><thead><tr><th>Tarih</th><th>Depo</th><th>Zaman</th><th>Durum</th><th>Not</th></tr></thead><tbody>' + tRows + '</tbody></table>');
+      win.document.write('<table><thead><tr><th>Tarih</th><th>Depo</th><th>Sabah</th><th>Öğle</th><th>Akşam</th><th>Onay</th><th>Onaylayan</th><th>Not</th></tr></thead><tbody>' + tRows + '</tbody></table>');
       win.document.write('</body></html>');
       win.document.close();
       setTimeout(function() { win.print(); }, 500);
