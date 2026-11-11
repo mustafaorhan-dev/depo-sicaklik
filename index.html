@@ -84,7 +84,16 @@
       .section-title { font-size: 13px; margin: 14px 0 8px 0; }
       .card { padding: 12px; margin-bottom: 14px; }
     }
-  </style>
+  
+/* Depo filtre butonlari: 3'lu izgara, ayni genislik, tek satir */
+#depoFiltreler { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; width:100%; }
+#depoFiltreler .btn { width:100%; max-width:100%; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; justify-content:center; }
+/* Telefonda 2'li izgara (2 ustte, 2 altta, 2 en altta) */
+@media (max-width: 640px) {
+  #depoFiltreler { grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+  #depoFiltreler .btn { font-size:10px; padding:6px 4px; letter-spacing:-0.2px; }
+}
+</style>
 </head>
 <body>
   <div class="container">
@@ -247,26 +256,6 @@
       renderTumunu();
     }
 
-    // Depo filtre butonlari: en genisine esit olsun (duzenli gorunum)
-    function depoButonlariniEsitle(kap) {
-      try {
-        var btns = kap.querySelectorAll('.btn[data-depo]');
-        var enGenis = 0;
-        btns.forEach(function(b) {
-          if (b.getAttribute('data-depo') === '') return;   // "Tumu" kendi boyutunda kalir
-          var w = b.offsetWidth;
-          if (w > enGenis) enGenis = w;
-        });
-        if (enGenis > 0) {
-          btns.forEach(function(b) {
-            if (b.getAttribute('data-depo') === '') return;
-            b.style.width = enGenis + 'px';
-            b.style.maxWidth = '100%';
-          });
-        }
-      } catch (_) {}
-    }
-
     function depoListesiDoldur() {
       var k = document.getElementById('depoFiltreler');
       if (!k) return;
@@ -274,10 +263,9 @@
       var html = '<button class="btn btn-outline' + (seciliDepo === '' ? ' active' : '') + '" data-depo="" onclick="depoSec(\'\')">T\u00fcm\u00fc</button>';
       allDepos.forEach(function(d) {
         var a = d === seciliDepo ? ' active' : '';
-        html += '<button class="btn btn-outline' + a + '" data-depo="' + d.replace(/"/g, '&quot;') + '" onclick="depoSec(\'' + d.replace(/'/g, "\\'") + '\')">' + d + '</button>';
+        html += '<button class="btn btn-outline' + a + '" title="' + d.replace(/"/g, '&quot;') + '" data-depo="' + d.replace(/"/g, '&quot;') + '" onclick="depoSec(\'' + d.replace(/'/g, "\\'") + '\')">' + d + '</button>';
       });
       k.innerHTML = html;
-      depoButonlariniEsitle(k);
     }
 
     function renderSicaklik() {
