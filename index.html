@@ -90,7 +90,7 @@
   <div class="container">
     <header>
       <h1>🌡️ Depo Sıcaklık ve Temizlik Kayıtları</h1>
-      <div class="sub">Kırşehir Ahi Evran Üniversitesi · SKSDB · Giriş gerektirmez · Sadece QR okutularak biligi alınr.</div>
+      <div class="sub">Kırşehir Ahi Evran Üniversitesi · SKSDB · Giriş gerektirmez · Sadece QR okutularak bilgi alınır.</div>
     </header>
 
     <div class="toolbar">
@@ -247,6 +247,26 @@
       renderTumunu();
     }
 
+    // Depo filtre butonlari: en genisine esit olsun (duzenli gorunum)
+    function depoButonlariniEsitle(kap) {
+      try {
+        var btns = kap.querySelectorAll('.btn[data-depo]');
+        var enGenis = 0;
+        btns.forEach(function(b) {
+          if (b.getAttribute('data-depo') === '') return;   // "Tumu" kendi boyutunda kalir
+          var w = b.offsetWidth;
+          if (w > enGenis) enGenis = w;
+        });
+        if (enGenis > 0) {
+          btns.forEach(function(b) {
+            if (b.getAttribute('data-depo') === '') return;
+            b.style.width = enGenis + 'px';
+            b.style.maxWidth = '100%';
+          });
+        }
+      } catch (_) {}
+    }
+
     function depoListesiDoldur() {
       var k = document.getElementById('depoFiltreler');
       if (!k) return;
@@ -257,6 +277,7 @@
         html += '<button class="btn btn-outline' + a + '" data-depo="' + d.replace(/"/g, '&quot;') + '" onclick="depoSec(\'' + d.replace(/'/g, "\\'") + '\')">' + d + '</button>';
       });
       k.innerHTML = html;
+      depoButonlariniEsitle(k);
     }
 
     function renderSicaklik() {
