@@ -434,13 +434,12 @@
         Object.keys(uniqueDepos).forEach(function(d) { if (allDepos.indexOf(d) < 0) allDepos.push(d); });
         allDepos.sort();
 
-        // Temizlik kayıtları (şimdilik pasif; tablo henüz oluşturulmadı)
-        var tData = null, tErr = null;
-        /* var { data: tData, error: tErr } = await supabaseClient
+        // Temizlik kayıtları
+        var { data: tData, error: tErr } = await supabaseClient
           .from('depo_temizlik_kayitleri')
           .select('*')
           .order('tarih', { ascending: false })
-          .limit(5000); */
+          .limit(5000);
 
         if (tErr) {
           console.warn('Temizlik okuma hatas\u0131:', tErr);
