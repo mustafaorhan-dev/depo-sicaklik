@@ -437,7 +437,7 @@
         // Temizlik kayıtları
         var { data: tData, error: tErr } = await supabaseClient
           .from('depo_temizlik_kayitleri')
-          .select('*')
+          .select('tarih,depo_ad,sabah,ogle,aksam,durum,onaylayan,not_')
           .order('tarih', { ascending: false })
           .limit(5000);
 
