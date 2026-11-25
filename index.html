@@ -163,8 +163,8 @@
   </div>
 
   <script>
-    var SUPABASE_URL = 'https://ydbeltktutcxfeosqmai.supabase.co';
-    var SUPABASE_ANON_KEY = 'sb_publishable_-c9dOMEYdhnFFmRrW3In9Q_CS8YREh4';
+    var SUPABASE_URL = 'https://jarnxfhviniqfdeptifb.supabase.co';
+    var SUPABASE_ANON_KEY = 'sb_publishable_jDi72096C6MNcrcZHmpPFg_ATt5_2SP';
     var supabaseClient = null;
 
     var sicaklikRecords = [];
@@ -434,12 +434,13 @@
         Object.keys(uniqueDepos).forEach(function(d) { if (allDepos.indexOf(d) < 0) allDepos.push(d); });
         allDepos.sort();
 
-        // Temizlik kayıtları
-        var { data: tData, error: tErr } = await supabaseClient
+        // Temizlik kayıtları (şimdilik pasif; tablo henüz oluşturulmadı)
+        var tData = null, tErr = null;
+        /* var { data: tData, error: tErr } = await supabaseClient
           .from('depo_temizlik_kayitleri')
           .select('*')
           .order('tarih', { ascending: false })
-          .limit(5000);
+          .limit(5000); */
 
         if (tErr) {
           console.warn('Temizlik okuma hatas\u0131:', tErr);
